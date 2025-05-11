@@ -82,60 +82,42 @@ func (wiki *Wiki) traverseContent(currentPath string, parentNode *Node) {
 	}
 }
 
+func (wiki *Wiki) GetRoute(node *Node) (string, string) {
+	var actual, route string
+	if filepath.Ext(node.Name) == ".md" {
+		actual = filepath.Join(wiki.ContentRoot, node.Path)
+		route = strings.TrimSuffix(node.Name, ".md")
+	} else {
+		return "", ""
+	}
+	return actual, route
+}
+
 func (wiki *Wiki) RegisterRoutes(e *echo.Echo) {
 	wiki.mu.RLock()
 	defer wiki.mu.RUnlock()
 
-	nameToPaths := make(map[string][]string)
-
-	var register func(node *Node)
-	register = func(node *Node) {
-		if node.IsDir {
-			indexPath := filepath.Join(wiki.ContentRoot, node.Path, "index.md")
-			routePath := "/" + node.Path
-			if node.Path == "" {
-				routePath = "/"
-			}
-
-			if _, err := os.Stat(indexPath); err == nil {
-				e.GET(routePath, wiki.handlerFor(indexPath))
-			} else {
-				e.GET(routePath, func(c echo.Context) error {
-					return echo.NewHTTPError(http.StatusNotFound, "Page not found")
-				})
-			}
-		} else if filepath.Ext(node.Name) == ".md" {
-			if strings.HasSuffix(node.Name, "index.md") {
-				return
-			}
-
-			cleanPath := "/" + strings.TrimSuffix(node.Path, ".md")
-			fullPath := filepath.Join(wiki.ContentRoot, node.Path)
-			e.GET(cleanPath, wiki.handlerFor(fullPath))
-
-			base := strings.TrimSuffix(node.Name, ".md")
-			nameToPaths[base] = append(nameToPaths[base], node.Path)
+	routes := make(map[string][]string)
+	wiki.Walk(wiki.ContentTree, func(node *Node) {
+		actual, route := wiki.GetRoute(node)
+		if actual == "" || route == "" {
+			return
+		} else if route == "index" { // this wont work
+			route = ""
+			actual = "index.md"
 		}
+		route = "/" + route
+		routes[route] = append(routes[route], actual)
+	})
 
-		for _, child := range node.Children {
-			register(child)
-		}
-	}
-	register(wiki.ContentTree)
+	for route, actuals := range routes {
+		fmt.Println(route, "->", actuals) // remove this
 
-	// Register short names and disambiguation
-	for name, paths := range nameToPaths {
-		route := "/" + name
-
-		if len(paths) == 1 {
-			fullPath := filepath.Join(wiki.ContentRoot, paths[0])
-			e.GET(route, wiki.handlerFor(fullPath))
-		} else {
-			// Copy to avoid closure capture issue
-			nameCopy := name
-			pathsCopy := append([]string(nil), paths...)
-
-			e.GET(route, wiki.disambiguationHandler(nameCopy, pathsCopy))
+		amount := len(actuals)
+		if amount == 1 {
+			e.GET(route, wiki.handlerFor(actuals[0]))
+		} else if amount > 1 {
+			// Handle disambiguation here
 		}
 	}
 
@@ -145,17 +127,13 @@ func (wiki *Wiki) RegisterRoutes(e *echo.Echo) {
 	}
 }
 
-func (wiki *Wiki) disambiguationHandler(title string, paths []string) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		links := make([]string, len(paths))
-		for i, p := range paths {
-			links[i] = "/" + strings.TrimSuffix(p, ".md")
-		}
-		data := map[string]interface{}{
-			"Title": title,
-			"Links": links,
-		}
-		return c.Render(http.StatusOK, "base.html", data)
+func (wiki *Wiki) Walk(node *Node, fn func(*Node)) {
+	if node == nil {
+		return
+	}
+	fn(node)
+	for _, child := range node.Children {
+		wiki.Walk(child, fn)
 	}
 }
 
