@@ -8,7 +8,7 @@ But I must explain to you how all this mistaken idea of denouncing pleasure and 
 
 [**Wars of the Roses**](war/Wars_of_the_Roses)
 
-
-
-
-
+| Column 1      | Column 2      |
+| ------------- | ------------- |
+| Cell 1, Row 1 | Cell 2, Row 1 |
+| Cell 1, Row 2 | Cell 1, Row 2 |

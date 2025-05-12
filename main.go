@@ -104,7 +104,7 @@ func (wiki *Wiki) RegisterRoutes(e *echo.Echo) {
 			return
 		} else if route == "index" { // this wont work
 			route = ""
-			actual = "index.md"
+			fmt.Printf("actual: %s", actual)
 		}
 		route = "/" + route
 		routes[route] = append(routes[route], actual)
@@ -141,6 +141,7 @@ func (wiki *Wiki) handlerFor(fullPath string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		htmlContent, err := renderMarkdown(fullPath)
 		if err != nil {
+			fmt.Printf("Leave the gun, take the '%s'.", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render page")
 		}
 		data := map[string]interface{}{

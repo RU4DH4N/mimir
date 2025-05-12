@@ -1,33 +1,44 @@
-{{ define "partials/header.html" }}
-    <header class="flex items-center justify-between p-4" role="banner">
-        <!-- Left: Logo -->
-        <div class="flex-shrink-0">
-          <img src="static/images/logo.png" alt="Site Logo" class="h-16 w-auto" />
-        </div>
-      
-        <!-- Center: Search Bar -->
-        <div class="flex-1 px-4">
-          <div class="relative max-w-xl mx-auto">
-            <input
-              type="text"
-              placeholder="Search..."
-              class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.5 3a7.5 7.5 0 016.15 13.65z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-    
-        <!-- Right: Buttons -->
-        <div class="flex items-center space-x-4">
-          <a href="#" class="text-gray-700 hover:text-blue-600">Login</a>
-          <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Donate</button>
-        </div>
-    </header>     
-{{ end }}
+{{ define "header" }}
+<header class="flex items-center justify-between p-4" role="banner">
+  <!-- Left: Logo -->
+  <div class="flex-shrink-0">
+    <img src="static/img/logo.png" alt="Site Logo" class="h-16 w-auto" />
+  </div>
 
+  <!-- Center: Search Bar -->
+  <div class="flex-1 px-4">
+    <div class="relative max-w-xl mx-auto">
+      <input
+        type="text"
+        placeholder="Search..."
+        class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <div
+        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+      >
+        <svg
+          class="w-5 h-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.5 3a7.5 7.5 0 016.15 13.65z"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Buttons -->
+  <div class="flex items-center space-x-4">
+    <a href="#" class="text-gray-700 hover:text-blue-600">Login</a>
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      Donate
+    </button>
+  </div>
+</header>
+{{ end }}
