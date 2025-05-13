@@ -1,29 +1,18 @@
-package main
+package helper
 
 import (
 	"bytes"
 	"fmt"
-	"html/template"
-	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/labstack/echo/v4"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 )
 
-type TemplateRenderer struct {
-	templates *template.Template
-}
-
-func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-func renderMarkdown(path string) (string, error) {
+func RenderMarkdown(path string) (string, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to read markdown: %w", err)

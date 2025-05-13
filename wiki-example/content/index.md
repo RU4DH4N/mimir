@@ -6,7 +6,7 @@ But I must explain to you how all this mistaken idea of denouncing pleasure and 
 
 ## Wiki Pages
 
-[**Wars of the Roses**](war/Wars_of_the_Roses)
+[**Wars of the Roses**](Wars_of_the_Roses)
 
 | Column 1      | Column 2      |
 | ------------- | ------------- |

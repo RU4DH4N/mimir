@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	"html/template"
-	"io/fs"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	"github.com/RU4DH4N/mimir/handler"
+	"github.com/RU4DH4N/mimir/helper"
 	"github.com/labstack/echo/v4"
 )
 
@@ -104,20 +103,18 @@ func (wiki *Wiki) RegisterRoutes(e *echo.Echo) {
 			return
 		} else if route == "index" { // this wont work
 			route = ""
-			fmt.Printf("actual: %s", actual)
 		}
 		route = "/" + route
 		routes[route] = append(routes[route], actual)
 	})
 
 	for route, actuals := range routes {
-		fmt.Println(route, "->", actuals) // remove this
-
 		amount := len(actuals)
 		if amount == 1 {
-			e.GET(route, wiki.handlerFor(actuals[0]))
+			e.GET(route, handler.PageHandler(actuals[0]))
 		} else if amount > 1 {
 			// Handle disambiguation here
+			e.GET(route, handler.DisambiguationHandler(route, actuals))
 		}
 	}
 
@@ -137,38 +134,6 @@ func (wiki *Wiki) Walk(node *Node, fn func(*Node)) {
 	}
 }
 
-func (wiki *Wiki) handlerFor(fullPath string) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		htmlContent, err := renderMarkdown(fullPath)
-		if err != nil {
-			fmt.Printf("Leave the gun, take the '%s'.", err)
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render page")
-		}
-		data := map[string]interface{}{
-			"Content": template.HTML(htmlContent),
-		}
-		return c.Render(http.StatusOK, "base.html", data)
-	}
-}
-
-func loadTemplates(root string) *template.Template {
-	var files []string
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() && filepath.Ext(path) == ".html" {
-			files = append(files, path)
-		}
-		return nil
-	})
-	if err != nil {
-		panic(fmt.Errorf("failed to walk templates: %w", err))
-	}
-
-	return template.Must(template.ParseFiles(files...))
-}
-
 func main() {
 	dir := "wiki-example"
 	wiki := LoadWiki(filepath.Join(dir, "content"))
@@ -177,10 +142,11 @@ func main() {
 	e.Static("/static", filepath.Join(dir, "static"))
 
 	tmplRoot := filepath.Join(dir, "internal", "templates")
-	tmpls := loadTemplates(tmplRoot)
-	e.Renderer = &TemplateRenderer{templates: tmpls}
+	tmpls := helper.LoadTemplates(tmplRoot)
+	e.Renderer = &helper.TemplateRegistry{
+		Templates: tmpls,
+	}
 
 	wiki.RegisterRoutes(e)
-
 	e.Logger.Fatal(e.Start(":8080"))
 }
