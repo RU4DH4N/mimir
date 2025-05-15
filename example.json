@@ -1,0 +1,19 @@
+{
+  "pages": [
+    {
+      "slug": "Wars_of_the_Roses",
+      "lang": ["en", "fr"],
+      "file": "Wars_of_the_Roses.md"
+    },
+    {
+      "slug": "Labours_of_Hercules",
+      "lang": ["en", "fr"],
+      "file": "Labours_of_Hercules.md"
+    }
+  ],
+  "home": {
+    "file": "index.md",
+    "lang": ["en", "fr"]
+  },
+  "sub-categories": ["a", "b"]
+}

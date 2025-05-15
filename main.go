@@ -1,152 +1,133 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
-	"strings"
-	"sync"
 
 	"github.com/RU4DH4N/mimir/handler"
 	"github.com/RU4DH4N/mimir/helper"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
-type Node struct {
-	Name     string
-	Path     string
-	IsDir    bool
-	Children []*Node
+type Index struct {
+	Home struct {
+		Lang []string
+		File string
+	}
+	Pages []struct {
+		Lang []string
+		Slug string
+		File string
+	}
+	SubCategories []string
 }
 
-type Wiki struct {
-	ContentRoot string
-	ContentTree *Node
-	mu          sync.RWMutex
-}
+func readIndexJson(file string) (Index, error) {
+	var idx Index
 
-func LoadWiki(contentRoot string) *Wiki {
-	wiki := &Wiki{
-		ContentRoot: contentRoot,
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return idx, fmt.Errorf("index.json does not exist: %w", err)
 	}
 
-	wiki.mu.Lock()
-	defer wiki.mu.Unlock()
-
-	if _, err := os.Stat(wiki.ContentRoot); os.IsNotExist(err) {
-		log.Fatalf("content root does not exist: %s", wiki.ContentRoot)
-	}
-
-	wiki.ContentTree = &Node{
-		Name:     filepath.Base(wiki.ContentRoot),
-		Path:     "",
-		IsDir:    true,
-		Children: []*Node{},
-	}
-
-	wiki.traverseContent(wiki.ContentRoot, wiki.ContentTree)
-	return wiki
-}
-
-func (wiki *Wiki) traverseContent(currentPath string, parentNode *Node) {
-	items, err := os.ReadDir(currentPath)
+	data, err := os.ReadFile(file)
 	if err != nil {
-		log.Printf("Error reading directory %q: %v", currentPath, err)
+		return idx, fmt.Errorf("error reading index.json: %w", err)
+	}
+
+	if err := json.Unmarshal(data, &idx); err != nil {
+		return idx, fmt.Errorf("error unmarshaling index.json: %w", err)
+	}
+
+	return idx, nil
+}
+
+func getRoutes(root, path, defaultLanguage string, routeMap map[string][]string) {
+	indexPath := filepath.Join(root, path, "index.json")
+	index, err := readIndexJson(indexPath)
+	if err != nil {
 		return
 	}
 
-	for _, item := range items {
-		name := item.Name()
-		itemPath := filepath.Clean(filepath.Join(currentPath, name))
-
-		relativePath, err := filepath.Rel(wiki.ContentRoot, itemPath)
-		if err != nil {
-			log.Printf("Error getting relative path for %q: %v", itemPath, err)
-			continue
+	// Register home pages
+	for _, lang := range index.Home.Lang {
+		var route string
+		if lang != defaultLanguage {
+			route = "/" + path + "/" + lang
+		} else {
+			route = "/" + path
 		}
 
-		node := &Node{
-			Name:     name,
-			Path:     filepath.ToSlash(relativePath),
-			IsDir:    item.IsDir(),
-			Children: []*Node{},
-		}
+		route = filepath.Clean(route) // this isn't great
 
-		parentNode.Children = append(parentNode.Children, node)
-
-		if node.IsDir {
-			wiki.traverseContent(itemPath, node)
-		}
+		actual := filepath.Join(root, path, lang, index.Home.File)
+		routeMap[route] = append(routeMap[route], actual)
 	}
-}
 
-func (wiki *Wiki) GetRoute(node *Node) (string, string) {
-	var actual, route string
-	if filepath.Ext(node.Name) == ".md" {
-		actual = filepath.Join(wiki.ContentRoot, node.Path)
-		route = strings.TrimSuffix(node.Name, ".md")
-	} else {
-		return "", ""
-	}
-	return actual, route
-}
+	// Register individual pages
+	for _, page := range index.Pages {
+		for _, lang := range page.Lang {
+			var route string
+			if lang != defaultLanguage {
+				route = "/" + lang + page.Slug
+			} else {
+				route = "/" + page.Slug
+			}
 
-func (wiki *Wiki) RegisterRoutes(e *echo.Echo) {
-	wiki.mu.RLock()
-	defer wiki.mu.RUnlock()
+			route = filepath.Clean(route)
 
-	routes := make(map[string][]string)
-	wiki.Walk(wiki.ContentTree, func(node *Node) {
-		actual, route := wiki.GetRoute(node)
-		if actual == "" || route == "" {
-			return
-		} else if route == "index" { // this wont work
-			route = ""
-		}
-		route = "/" + route
-		routes[route] = append(routes[route], actual)
-	})
-
-	for route, actuals := range routes {
-		amount := len(actuals)
-		if amount == 1 {
-			e.GET(route, handler.PageHandler(actuals[0]))
-		} else if amount > 1 {
-			// Handle disambiguation here
-			e.GET(route, handler.DisambiguationHandler(route, actuals))
+			actual := filepath.Join(root, path, lang, page.File)
+			routeMap[route] = append(routeMap[route], actual)
 		}
 	}
 
-	fmt.Println("=== Registered Routes ===")
-	for _, route := range e.Routes() {
-		fmt.Printf("[%s] %s -> %s\n", route.Method, route.Path, route.Name)
-	}
-}
-
-func (wiki *Wiki) Walk(node *Node, fn func(*Node)) {
-	if node == nil {
-		return
-	}
-	fn(node)
-	for _, child := range node.Children {
-		wiki.Walk(child, fn)
+	// Recurse into subcategories
+	for _, sub := range index.SubCategories {
+		subPath := filepath.Join(path, sub)
+		getRoutes(root, subPath, defaultLanguage, routeMap)
 	}
 }
 
 func main() {
+	// load 'dir' from config at some point
 	dir := "wiki-example"
-	wiki := LoadWiki(filepath.Join(dir, "content"))
 
 	e := echo.New()
+
+	e.Use(middleware.Secure())
+
 	e.Static("/static", filepath.Join(dir, "static"))
 
+	// Load Templates
 	tmplRoot := filepath.Join(dir, "internal", "templates")
 	tmpls := helper.LoadTemplates(tmplRoot)
 	e.Renderer = &helper.TemplateRegistry{
 		Templates: tmpls,
 	}
 
-	wiki.RegisterRoutes(e)
+	w := e.Group("/wiki")
+
+	// load 'en' from config at some point
+	rMap := make(map[string][]string)
+	getRoutes(filepath.Join(dir, "content"), "", "en", rMap)
+	for route, actuals := range rMap {
+		if len(actuals) == 1 {
+			w.GET(route, handler.PageHandler(actuals[0]))
+		} else if len(actuals) > 1 {
+			w.GET(route, handler.DisambiguationHandler(route, filepath.Join(dir, "content"), actuals))
+			//for _, actual := range actuals {
+			// not decided how to do this yet
+			//}
+		}
+	}
+
+	// Remove this later
+	fmt.Println("=== Registered Routes ===")
+	for _, route := range e.Routes() {
+		fmt.Printf("[%s] %s -> %s\n", route.Method, route.Path, route.Name)
+	}
+
 	e.Logger.Fatal(e.Start(":8080"))
 }

@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "slug": "Wars_of_the_Roses",
+      "lang": ["en"],
+      "file": "Wars_of_the_Roses.md"
+    }
+  ],
+  "subcategories": ["war"]
+}
