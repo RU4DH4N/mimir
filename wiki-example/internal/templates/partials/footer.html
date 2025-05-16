@@ -1,4 +1,21 @@
 {{ define "footer" }}
-<footer><p>Footer</p></footer>
+<footer class="bg-gray-100 mt-8 border-t border-gray-300">
+  <div
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between text-sm text-gray-600"
+  >
+    <p>
+      &copy; 2025 Wiki Example. Licensed under
+      <a
+        href="https://www.gnu.org/licenses/gpl-3.0.en.html"
+        class="hover:underline text-blue-600"
+        >GPL-3.0</a
+      >.
+    </p>
+    <div class="mt-2 sm:mt-0 flex space-x-4">
+      <a href="/about" class="hover:underline">About</a>
+      <a href="/privacy" class="hover:underline">Privacy</a>
+      <a href="/contact" class="hover:underline">Contact</a>
+    </div>
+  </div>
+</footer>
 {{ end }}
-

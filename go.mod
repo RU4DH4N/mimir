@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/yuin/goldmark v1.7.11
+	go.abhg.dev/goldmark/toc v0.12.0
 )
 
 require (

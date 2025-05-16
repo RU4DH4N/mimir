@@ -10,21 +10,28 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
+	"go.abhg.dev/goldmark/toc"
 )
 
-func RenderMarkdown(path string) (string, error) {
+func RenderMarkdown(path string, table bool) (string, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to read markdown: %w", err)
+		return "", fmt.Errorf("failed to resolve markdown path: %w", err)
 	}
 
 	content, err := os.ReadFile(abs)
 	if err != nil {
-		return "", fmt.Errorf("failed to read markdown: %w", err)
+		return "", fmt.Errorf("failed to read markdown file: %w", err)
 	}
 
-	markdown := goldmark.New( // move this outside the function?
-		goldmark.WithExtensions(extension.GFM),
+	// Prepare extensions based on 'table' flag
+	extensions := []goldmark.Extender{extension.GFM}
+	if table {
+		extensions = append(extensions, &toc.Extender{})
+	}
+
+	md := goldmark.New(
+		goldmark.WithExtensions(extensions...),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
 		),
@@ -35,8 +42,8 @@ func RenderMarkdown(path string) (string, error) {
 	)
 
 	var buf bytes.Buffer
-	if err := markdown.Convert(content, &buf); err != nil {
-		return "", fmt.Errorf("failed to convert markdown: %w", err)
+	if err := md.Convert(content, &buf); err != nil {
+		return "", fmt.Errorf("failed to convert markdown to HTML: %w", err)
 	}
 
 	return buf.String(), nil

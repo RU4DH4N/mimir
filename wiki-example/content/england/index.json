@@ -1,9 +1,18 @@
 {
   "pages": [
     {
-      "slug": "Wars_of_the_Roses",
-      "lang": ["en"],
-      "file": "Wars_of_the_Roses.md"
+      "languages": [
+        {
+          "language": "en",
+          "title": "Wars of the Roses",
+          "file": "Wars_of_the_Roses.md"
+        },
+        {
+          "language": "fr",
+          "title": "Guerre des Deux-Roses",
+          "file": "Guerre_des_Deux-Roses.md"
+        }
+      ]
     }
   ],
   "subcategories": ["war"]

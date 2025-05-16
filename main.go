@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/RU4DH4N/mimir/handler"
 	"github.com/RU4DH4N/mimir/helper"
@@ -13,16 +14,23 @@ import (
 )
 
 type Index struct {
-	Home struct {
-		Lang []string
-		File string
-	}
-	Pages []struct {
-		Lang []string
-		Slug string
-		File string
-	}
-	SubCategories []string
+	Pages         []Page   `json:"pages"`
+	Home          Home     `json:"home"`
+	SubCategories []string `json:"subcategories"`
+}
+
+type Page struct {
+	Languages []Language `json:"languages"`
+}
+
+type Home struct {
+	Languages []Language `json:"languages"`
+}
+
+type Language struct {
+	Language string `json:"language"`
+	Title    string `json:"title,omitempty"`
+	File     string `json:"file"`
 }
 
 func readIndexJson(file string) (Index, error) {
@@ -41,10 +49,17 @@ func readIndexJson(file string) (Index, error) {
 		return idx, fmt.Errorf("error unmarshaling index.json: %w", err)
 	}
 
+	fmt.Println("test: ", idx)
+
 	return idx, nil
 }
 
-func getRoutes(root, path, defaultLanguage string, routeMap map[string][]string) {
+// I'm going to make this safer later
+func titleToSlug(title string) string {
+	return strings.ReplaceAll(title, " ", "_")
+}
+
+func getRoutes(root, path string, rMap map[string][]handler.Route) {
 	indexPath := filepath.Join(root, path, "index.json")
 	index, err := readIndexJson(indexPath)
 	if err != nil {
@@ -52,41 +67,29 @@ func getRoutes(root, path, defaultLanguage string, routeMap map[string][]string)
 	}
 
 	// Register home pages
-	for _, lang := range index.Home.Lang {
-		var route string
-		if lang != defaultLanguage {
-			route = "/" + path + "/" + lang
-		} else {
-			route = "/" + path
-		}
+	for _, language := range index.Home.Languages {
+		route := filepath.Clean("/" + titleToSlug(language.Title))
+		actual := filepath.Join(root, path, language.File)
+		rMap[route] = append(rMap[route], handler.Route{
+			Actual: actual,
+			Toc:    false,
+		})
 
-		route = filepath.Clean(route) // this isn't great
-
-		actual := filepath.Join(root, path, lang, index.Home.File)
-		routeMap[route] = append(routeMap[route], actual)
 	}
 
-	// Register individual pages
 	for _, page := range index.Pages {
-		for _, lang := range page.Lang {
-			var route string
-			if lang != defaultLanguage {
-				route = "/" + lang + page.Slug
-			} else {
-				route = "/" + page.Slug
-			}
-
-			route = filepath.Clean(route)
-
-			actual := filepath.Join(root, path, lang, page.File)
-			routeMap[route] = append(routeMap[route], actual)
+		for _, language := range page.Languages {
+			route := filepath.Clean("/" + titleToSlug(language.Title))
+			actual := filepath.Join(root, path, language.File)
+			rMap[route] = append(rMap[route], handler.Route{
+				Actual: actual,
+				Toc:    true,
+			})
 		}
 	}
 
-	// Recurse into subcategories
-	for _, sub := range index.SubCategories {
-		subPath := filepath.Join(path, sub)
-		getRoutes(root, subPath, defaultLanguage, routeMap)
+	for _, category := range index.SubCategories {
+		getRoutes(root, filepath.Join(path, category), rMap)
 	}
 }
 
@@ -110,13 +113,16 @@ func main() {
 	w := e.Group("/wiki")
 
 	// load 'en' from config at some point
-	rMap := make(map[string][]string)
-	getRoutes(filepath.Join(dir, "content"), "", "en", rMap)
+	contentRoot := filepath.Join(dir, "content")
+	rMap := make(map[string][]handler.Route)
+	getRoutes(contentRoot, "", rMap)
 	for route, actuals := range rMap {
 		if len(actuals) == 1 {
 			w.GET(route, handler.PageHandler(actuals[0]))
 		} else if len(actuals) > 1 {
-			w.GET(route, handler.DisambiguationHandler(route, filepath.Join(dir, "content"), actuals))
+			title := strings.ReplaceAll(route[1:], "_", " ")
+
+			w.GET(route, handler.DisambiguationHandler(title, contentRoot, actuals))
 			//for _, actual := range actuals {
 			// not decided how to do this yet
 			//}

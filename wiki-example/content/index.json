@@ -1,7 +1,11 @@
 {
   "home": {
-    "file": "home.md",
-    "lang": ["en", "fr"]
+    "languages": [
+      {
+        "language": "en",
+        "file": "home.md"
+      }
+    ]
   },
   "subcategories": ["england", "war"]
 }

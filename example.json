@@ -1,19 +1,36 @@
 {
   "pages": [
     {
-      "slug": "Wars_of_the_Roses",
-      "lang": ["en", "fr"],
-      "file": "Wars_of_the_Roses.md"
+      "languages": [
+        {
+          "language": "en",
+          "title": "Wars of the Roses",
+          "file": "Wars_of_the_Roses.md"
+        },
+        {
+          "language": "fr",
+          "title": "Guerre des Deux-Roses",
+          "file": "Guerre_des_Deux-Roses.md"
+        }
+      ]
     },
     {
-      "slug": "Labours_of_Hercules",
-      "lang": ["en", "fr"],
-      "file": "Labours_of_Hercules.md"
+      "languages": [
+        {
+          "language": "en",
+          "title": "Labours of Hercules",
+          "file": "Labours_of_Hercules.md"
+        }
+      ]
     }
   ],
   "home": {
-    "file": "index.md",
-    "lang": ["en", "fr"]
+    "languages": [
+      {
+        "language": "en",
+        "file": "home.md"
+      }
+    ]
   },
   "sub-categories": ["a", "b"]
 }
