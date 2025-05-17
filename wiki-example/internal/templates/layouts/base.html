@@ -1,11 +1,15 @@
 {{define "base"}}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="/static/css/tailwind.css" rel="stylesheet" />
-    <title>Example</title>
+    {{with .Title}}
+    <title>{{.}}</title>
+    {{else}}
+    <title>Mimir</title>
+    {{end}}
   </head>
   <body>
     {{template "header" .}}

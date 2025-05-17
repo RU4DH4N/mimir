@@ -23,6 +23,7 @@ func PageHandler(data PageData) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render page")
 		}
 		data := map[string]any{
+			"Title":   data.Title,
 			"Content": template.HTML(content),
 		}
 		return c.Render(http.StatusOK, "index.html", data)

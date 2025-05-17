@@ -46,7 +46,6 @@ func loadRoutes(root string, w *echo.Group) error {
 			routes[category.Path] = append(routes[category.Path], data)
 		}
 
-		// need to handle disambiguation
 		for _, page := range category.Pages {
 			for _, language := range page.Languages {
 				file := filepath.Join(root, category.Path, language.File)
