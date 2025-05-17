@@ -49,14 +49,11 @@ func readIndexJson(file string) (Index, error) {
 		return idx, fmt.Errorf("error unmarshaling index.json: %w", err)
 	}
 
-	fmt.Println("test: ", idx)
-
 	return idx, nil
 }
 
-// I'm going to make this safer later
-func titleToSlug(title string) string {
-	return strings.ReplaceAll(title, " ", "_")
+func getRoute(title string) string {
+	return filepath.Clean("/" + helper.Slugify(title))
 }
 
 func getRoutes(root, path string, rMap map[string][]handler.Route) {
@@ -68,7 +65,7 @@ func getRoutes(root, path string, rMap map[string][]handler.Route) {
 
 	// Register home pages
 	for _, language := range index.Home.Languages {
-		route := filepath.Clean("/" + titleToSlug(language.Title))
+		route := getRoute(language.Title)
 		actual := filepath.Join(root, path, language.File)
 		rMap[route] = append(rMap[route], handler.Route{
 			Actual: actual,
@@ -79,7 +76,7 @@ func getRoutes(root, path string, rMap map[string][]handler.Route) {
 
 	for _, page := range index.Pages {
 		for _, language := range page.Languages {
-			route := filepath.Clean("/" + titleToSlug(language.Title))
+			route := getRoute(language.Title)
 			actual := filepath.Join(root, path, language.File)
 			rMap[route] = append(rMap[route], handler.Route{
 				Actual: actual,
