@@ -1,30 +1,28 @@
 package helper
 
 import (
-	"regexp"
 	"strings"
+	"unicode"
 )
 
-// Regex (See: https://regexlicensing.org/)
-
-// Remove all non-word chars (fix for UTF-8 chars)
-// allows unicode letters & numbers, and also '-'
-// \p{L} matches any kind of letter from any language
-// \p{N} matches any kind of numeric character in any script
-var reNonWord = regexp.MustCompile(`[^\p{L}\p{N}\-]`)
-
-// Replace multiple - with single -
-var reMultiDash = regexp.MustCompile(`-{2,}`)
-
+// need to unit test this
 func Slugify(text string) string {
+	var sb strings.Builder
 	text = strings.ToLower(text)
 
-	text = reNonWord.ReplaceAllString(text, "-")
+	for _, r := range text {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			sb.WriteRune(r)
+		} else if unicode.IsSpace(r) || r == '-' {
+			if sb.Len() > 0 && sb.String()[sb.Len()-1] != '-' {
+				sb.WriteRune('-')
+			}
+		} else {
+			if sb.Len() > 0 && sb.String()[sb.Len()-1] != '-' {
+				sb.WriteRune('-')
+			}
+		}
+	}
 
-	text = reMultiDash.ReplaceAllString(text, "-")
-
-	text = strings.TrimLeft(text, "-")
-	text = strings.TrimRight(text, "-")
-
-	return text
+	return strings.Trim(sb.String(), "-")
 }
