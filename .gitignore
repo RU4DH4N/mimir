@@ -25,4 +25,4 @@ go.work.sum
 .env
 
 # generated file
-*/tailwind.css
+tailwind.css
