@@ -26,3 +26,13 @@ func Slugify(text string) string {
 
 	return strings.Trim(sb.String(), "-")
 }
+
+// this is temporary
+func Linkify(text string) string {
+	parts := strings.Split(text, "/")
+	var sb strings.Builder
+	for _, part := range parts {
+		sb.WriteString("/" + Slugify(part))
+	}
+	return sb.String()
+}

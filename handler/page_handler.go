@@ -9,9 +9,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func PageHandler(route Route) echo.HandlerFunc {
+type PageData struct {
+	Title string
+	Path  string
+	Table bool
+}
+
+func PageHandler(data PageData) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		content, err := helper.RenderMarkdown(route.Actual, route.Toc)
+		content, err := helper.RenderMarkdown(data.Path, data.Table)
 		if err != nil {
 			fmt.Printf("Leave the gun, take the '%s'.", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render page")
