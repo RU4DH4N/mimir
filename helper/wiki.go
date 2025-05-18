@@ -1,9 +1,7 @@
 package helper
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 )
 
 type Index struct {
@@ -34,19 +32,15 @@ type Category struct {
 
 func ParseIndex(file string) (Index, error) {
 	var idx Index
-
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return idx, fmt.Errorf("index.json does not exist: %w", err)
-	}
-
-	data, err := os.ReadFile(file)
+	val, err := ParseJson(file, &idx)
 	if err != nil {
-		return idx, fmt.Errorf("error reading index.json: %w", err)
+		return idx, fmt.Errorf("unable to get index: %w", err)
 	}
 
-	if err := json.Unmarshal(data, &idx); err != nil {
-		return idx, fmt.Errorf("error unmarshaling index.json: %w", err)
+	idxPtr, ok := val.(*Index)
+	if !ok {
+		return idx, fmt.Errorf("unable to parse index")
 	}
 
-	return idx, nil
+	return *idxPtr, nil
 }

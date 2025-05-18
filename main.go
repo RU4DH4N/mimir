@@ -78,7 +78,10 @@ func loadRoutes(root string, w *echo.Group) error {
 }
 
 func main() {
-	cfg := helper.LoadConfig()
+	cfg, err := helper.GetConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	e := echo.New()
 
@@ -91,10 +94,11 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.Static("/static", filepath.Join(cfg.Dir, "static"))
+	// change this
+	e.Static("/static", filepath.Join(cfg.WikiRoot, "static"))
 
 	// Load Templates
-	tmplRoot := filepath.Join(cfg.Dir, "internal", "templates")
+	tmplRoot := filepath.Join(cfg.WikiRoot, "internal", "templates")
 	tmpls := helper.LoadTemplates(tmplRoot)
 	e.Renderer = &helper.TemplateRegistry{
 		Templates: tmpls,
@@ -105,7 +109,7 @@ func main() {
 	})
 
 	w := e.Group("/wiki/")
-	loadRoutes(filepath.Join(cfg.Dir, "content"), w)
+	loadRoutes(filepath.Join(cfg.WikiRoot, "content"), w)
 
 	// Remove this later
 	fmt.Println("=== Registered Routes ===")

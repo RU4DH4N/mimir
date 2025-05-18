@@ -1,59 +1,32 @@
 package helper
 
-import (
-	"log"
-	"os"
-	"strings"
-
-	"github.com/spf13/viper"
-)
+import "fmt"
 
 type Config struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-	Dir  string `mapstructure:"dir"`
+	Host     string   `json:"host"`
+	Port     uint     `json:"port"`
+	WikiRoot string   `json:"wiki-root"`
+	Custom   []string `json:"custom"`
 }
 
-func LoadConfig() Config {
-	v := viper.New()
-	v.SetConfigName("config")
-	v.AddConfigPath(".")
-	v.AddConfigPath("./configs")
-	v.SetDefault("host", "0.0.0.0")
-	v.SetDefault("port", 8080)
-	v.SetDefault("dir", "")
-	v.AutomaticEnv()
-	v.SetEnvPrefix("APP")
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Println("Config file not found. Using defaults and environment variables.")
-		} else {
-			log.Fatalf("Fatal error reading config file: %s", err)
-		}
-	}
-
+func GetConfig() (Config, error) {
 	var cfg Config
-	if err := v.Unmarshal(&cfg); err != nil {
-		log.Fatalf("Unable to unmarshal config into ServerConfig struct: %s", err)
+	val, err := ParseJson("config.json", &cfg)
+	if err != nil {
+		return cfg, fmt.Errorf("unable to get config: %w", err)
 	}
 
-	if cfg.Host == "" {
-		log.Fatal("Configuration error: 'host' cannot be empty.")
-	}
-	if cfg.Port <= 0 {
-		log.Fatal("Configuration error: 'port' must be a positive integer.")
-	}
-	if cfg.Dir == "" {
-		log.Fatal("Configuration error: 'dir' cannot be empty.")
+	cfgPtr, ok := val.(*Config)
+	if !ok {
+		return cfg, fmt.Errorf("unable to parse config")
 	}
 
-	if stat, err := os.Stat(cfg.Dir); os.IsNotExist(err) {
-		log.Fatalf("Configured directory '%s' does not exist. Please create it or set a valid path.", cfg.Dir)
-	} else if !stat.IsDir() {
-		log.Fatalf("Configured path '%s' is not a directory.", cfg.Dir)
+	cfg = *cfgPtr
+
+	// might move this to main later
+	if cfg.Port > 65535 {
+		return cfg, fmt.Errorf("Invalid port number: %d", cfg.Port)
 	}
 
-	return cfg
+	return cfg, nil
 }
