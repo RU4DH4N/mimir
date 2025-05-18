@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 
 	"github.com/RU4DH4N/mimir/handler"
 	"github.com/RU4DH4N/mimir/helper"
@@ -65,7 +66,11 @@ func loadRoutes(root string, w *echo.Group) error {
 		if len(data) == 1 {
 			w.GET(route, handler.PageHandler(data[0]))
 		} else if len(data) > 1 {
-			w.GET(route, handler.DisambiguationHandler(data[0].Title, root, data))
+			w.GET(route, handler.DisambiguationHandler(data[0].Title, root, route, data))
+			for i, page := range data {
+				r := route + "/v" + strconv.Itoa(i+1)
+				w.GET(r, handler.PageHandler(page))
+			}
 		}
 	}
 
